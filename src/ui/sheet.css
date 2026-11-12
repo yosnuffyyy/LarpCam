@@ -1,0 +1,218 @@
+.sheet {
+  position: absolute;
+  inset: 0;
+  z-index: var(--layer-sheet);
+  display: flex;
+  align-items: flex-end;
+}
+
+.sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--scrim);
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+.sheet__panel {
+  position: relative;
+  width: 100%;
+  max-height: 86%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-raised);
+  color: var(--fg);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow: 0 -1px 0 var(--line);
+  transform: translateY(100%);
+  transition: transform var(--dur-slow) var(--ease-spring-snappy);
+  will-change: transform;
+}
+
+.sheet.is-open .sheet__backdrop {
+  opacity: 1;
+}
+
+.sheet.is-open .sheet__panel {
+  transform: translateY(0);
+}
+
+/* The drag handle is a full-width 44 px strip so it is easy to grab. */
+.sheet__handle {
+  flex: none;
+  height: var(--tap);
+  display: grid;
+  place-items: center;
+  touch-action: none;
+  cursor: grab;
+}
+
+.sheet__handle span {
+  width: 36px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--fg-faint);
+}
+
+.sheet__body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 var(--gutter) calc(var(--space-6) + var(--safe-bottom));
+}
+
+.sheet__title {
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-4);
+}
+
+.sheet__section + .sheet__section {
+  margin-top: var(--space-5);
+}
+
+.sheet__label {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--fg-dim);
+  margin-bottom: var(--space-2);
+}
+
+.sheet__note {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--fg-dim);
+}
+
+.sheet__note svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.sheet__build {
+  margin-top: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--fg-faint);
+  text-align: center;
+}
+
+/* Segmented choice (picture shape) ----------------------------------------- */
+
+.segments {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--fill);
+  border-radius: var(--radius-md);
+}
+
+.segment {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 60px;
+  border-radius: calc(var(--radius-md) - var(--space-1));
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-dim);
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-spring-snappy);
+}
+
+.segment:active {
+  transform: scale(0.96);
+}
+
+.segment[aria-checked='true'] {
+  background: var(--fill-strong);
+  color: var(--fg);
+}
+
+/* Rows --------------------------------------------------------------------- */
+
+.rows {
+  border-radius: var(--radius-md);
+  background: var(--fill);
+  overflow: hidden;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--space-2) var(--space-4);
+  text-align: left;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.row + .row {
+  box-shadow: inset 0 1px 0 var(--line);
+}
+
+.row:active {
+  background: var(--fill);
+}
+
+.row__icon {
+  flex: none;
+  color: var(--fg-dim);
+}
+
+.row__text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.row__label {
+  font-size: var(--text-md);
+}
+
+.row__hint {
+  font-size: var(--text-sm);
+  color: var(--fg-dim);
+  line-height: var(--leading-snug);
+}
+
+.switch {
+  flex: none;
+  width: 50px;
+  height: 30px;
+  padding: 3px;
+  border-radius: var(--radius-full);
+  background: var(--fill-strong);
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.switch__knob {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: var(--white);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+  transition: transform var(--dur-base) var(--ease-spring-snappy);
+}
+
+.switch.is-on {
+  background: var(--yellow);
+}
+
+.switch.is-on .switch__knob {
+  transform: translateX(20px);
+}

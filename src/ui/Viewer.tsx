@@ -106,6 +106,8 @@ export function Viewer({ open, onClose }: ViewerProps) {
               {formatTime(current.createdAt)}
               <span aria-hidden="true"> · </span>
               {current.lens}
+              <span aria-hidden="true"> · </span>
+              {framedSize(current)}
               {photos.length > 1 && (
                 <>
                   <span aria-hidden="true"> · </span>
@@ -230,6 +232,13 @@ function useShareFile(photo: Photo | undefined): Promise<File | null> {
       return null;
     }
   }, [photo?.id]);
+}
+
+/** Pixel size of the photo as framed, e.g. "1440 × 1920". */
+function framedSize(photo: Photo): string {
+  const w = Math.round(photo.crop.width * photo.width);
+  const h = Math.round(photo.crop.height * photo.height);
+  return `${w} × ${h}`;
 }
 
 function fileName(time: number): string {

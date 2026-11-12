@@ -8,7 +8,7 @@ A quiet camera that installs from a link. Everything stays on your phone: no acc
 2. Tap the **Share** button, then **Add to Home Screen**.
 3. Open **LarpCam** from your Home Screen and tap **Turn on camera**.
 
-That's all. It opens full screen like any other app and keeps working with no signal.
+That's all. It opens full screen like any other app and keeps working with no signal. Needs iOS 16.4 or newer.
 On Android, open the same link in Chrome and tap **Install**.
 
 > Photos you take live inside LarpCam on your phone. Use **Save or share** on any photo to put it in your Photos app.

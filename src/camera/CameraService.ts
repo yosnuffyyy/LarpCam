@@ -59,6 +59,7 @@ export class CameraService {
   private deviceId: string | undefined;
   private startToken = 0;
   private zoomQueue: Promise<void> = Promise.resolve();
+  private muteTimer = 0;
 
   /** The <video> the stream should play in. Call again if the element changes. */
   attach(video: HTMLVideoElement | null): void {
@@ -77,7 +78,7 @@ export class CameraService {
       return;
     }
     const token = ++this.startToken;
-    if (this.status.value !== 'live') this.status.value = 'starting';
+    this.status.value = 'starting';
     this.release();
 
     try {
@@ -92,6 +93,8 @@ export class CameraService {
       this.stream = stream;
       this.track = track;
       track.addEventListener('ended', this.onTrackEnded);
+      track.addEventListener('mute', this.onTrackMuted);
+      track.addEventListener('unmute', this.onTrackUnmuted);
 
       await this.readDevices();
       if (token !== this.startToken) return;
@@ -280,8 +283,30 @@ export class CameraService {
     }
   };
 
+  /**
+   * iPhones "mute" the camera when something interrupts it (a call, Siri,
+   * another app). If the picture has not come back shortly, reopen the camera.
+   */
+  private onTrackMuted = (): void => {
+    window.clearTimeout(this.muteTimer);
+    this.muteTimer = window.setTimeout(() => {
+      if (this.track?.muted && this.status.value === 'live' && document.visibilityState === 'visible') {
+        void this.start();
+      }
+    }, 1500);
+  };
+
+  private onTrackUnmuted = (): void => {
+    window.clearTimeout(this.muteTimer);
+  };
+
   private release(): void {
-    if (this.track) this.track.removeEventListener('ended', this.onTrackEnded);
+    window.clearTimeout(this.muteTimer);
+    if (this.track) {
+      this.track.removeEventListener('ended', this.onTrackEnded);
+      this.track.removeEventListener('mute', this.onTrackMuted);
+      this.track.removeEventListener('unmute', this.onTrackUnmuted);
+    }
     this.stream?.getTracks().forEach((t) => t.stop());
     this.stream = null;
     this.track = null;

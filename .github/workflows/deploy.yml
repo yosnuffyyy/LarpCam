@@ -1,0 +1,144 @@
+# Checks every change, then publishes the built app to GitHub Pages.
+#
+#   merge to main  ->  https://<owner>.github.io/<repo>/
+#   pull request   ->  https://<owner>.github.io/<repo>/pr-preview/pr-<number>/
+#
+# The site is the gh-pages branch. One-time setup by the repository owner:
+# Settings -> Pages -> "Deploy from a branch" -> gh-pages, / (root).
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Check and build
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: build-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Typecheck, unit tests, build
+        run: npm run check
+      - name: Install the test browser
+        run: npx playwright install --with-deps chromium
+      - name: Drive the built app with a fake camera
+        run: npm run verify
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: artifacts
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: dist
+          if-no-files-found: error
+
+  publish:
+    name: Publish
+    needs: build
+    # Pull requests from forks get a read-only token, so they are built but not published.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # One writer to gh-pages at a time.
+    concurrency:
+      group: gh-pages
+      cancel-in-progress: false
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: site
+          path: dist
+      - name: Publish to gh-pages
+        run: |
+          set -euo pipefail
+          remote="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads "$remote" gh-pages >/dev/null 2>&1; then
+            git clone --quiet --depth 1 --branch gh-pages "$remote" site
+          else
+            git init --quiet -b gh-pages site
+            git -C site remote add origin "$remote"
+          fi
+
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          repo="${GITHUB_REPOSITORY#*/}"
+          if [ -n "${PR_NUMBER}" ]; then
+            target="pr-preview/pr-${PR_NUMBER}"
+            rm -rf "site/${target}"
+            mkdir -p "site/${target}"
+            cp -R dist/. "site/${target}/"
+            message="Preview for pull request #${PR_NUMBER}"
+            link="https://${owner}.github.io/${repo}/${target}/"
+          else
+            # Replace the live site but leave any open previews alone.
+            find site -mindepth 1 -maxdepth 1 ! -name .git ! -name pr-preview -exec rm -rf {} +
+            cp -R dist/. site/
+            message="Publish ${GITHUB_SHA::7}"
+            link="https://${owner}.github.io/${repo}/"
+          fi
+          touch site/.nojekyll
+
+          cd site
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing changed."
+          else
+            git -c user.name="github-actions[bot]" \
+                -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+                commit --quiet -m "$message"
+            git push --quiet origin gh-pages
+          fi
+          {
+            echo "### Published"
+            echo "$link"
+            echo
+            echo "If the link shows a 404, turn Pages on once: Settings → Pages → Deploy from a branch → \`gh-pages\`, \`/ (root)\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  cleanup:
+    name: Remove preview
+    if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: gh-pages
+      cancel-in-progress: false
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Delete the preview folder
+        run: |
+          set -euo pipefail
+          remote="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git ls-remote --exit-code --heads "$remote" gh-pages >/dev/null 2>&1 || exit 0
+          git clone --quiet --depth 1 --branch gh-pages "$remote" site
+          cd site
+          [ -d "pr-preview/pr-${PR_NUMBER}" ] || exit 0
+          git rm -r --quiet "pr-preview/pr-${PR_NUMBER}"
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit --quiet -m "Remove preview for pull request #${PR_NUMBER}"
+          git push --quiet origin gh-pages

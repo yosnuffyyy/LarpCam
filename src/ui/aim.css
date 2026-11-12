@@ -1,0 +1,166 @@
+.aims {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.aim {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 76px;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--fill);
+  text-align: left;
+  color: var(--fg-dim);
+  box-shadow: inset 0 0 0 1.5px transparent;
+  transition:
+    transform var(--dur-fast) var(--ease-spring-snappy),
+    box-shadow var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.aim:active {
+  transform: scale(0.97);
+}
+
+.aim[aria-checked='true'] {
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+
+.aim__diagram {
+  flex: none;
+}
+
+.aim__dot {
+  fill: currentColor;
+  opacity: 0.85;
+}
+
+.aim__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.aim__name {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  color: var(--fg);
+}
+
+.aim__blurb {
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--fg-dim);
+}
+
+/* ---- The target frame drawn over the picture ---------------------------- */
+
+.guide {
+  position: absolute;
+  border: 3px solid var(--accent);
+  border-radius: min(var(--radius-lg), 14%);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.18);
+  pointer-events: none;
+  animation: guide-in var(--dur-slow) var(--ease-spring) both;
+  /* Glides between the worker's answers instead of jumping. */
+  transition:
+    left 260ms linear,
+    top 260ms linear,
+    width 260ms linear,
+    height 260ms linear;
+}
+
+@keyframes guide-in {
+  from {
+    opacity: 0;
+    transform: scale(1.12);
+  }
+}
+
+.guide__label {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + var(--space-2));
+  transform: translateX(-50%);
+  padding: 3px var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+
+/* No room underneath: tuck the label inside the frame's bottom edge. */
+.guide--low .guide__label {
+  top: auto;
+  bottom: var(--space-2);
+}
+
+/* Scanning: one soft band sweeps down the picture. */
+.finder__scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, rgb(255 210 63 / 0.22) 45%, rgb(255 210 63 / 0.5) 50%, transparent 55%);
+  background-size: 100% 60%;
+  background-repeat: no-repeat;
+  animation: scan-sweep 700ms var(--ease-in-out) both;
+}
+
+@keyframes scan-sweep {
+  from {
+    background-position: 0 -80%;
+    opacity: 0;
+  }
+  20%,
+  80% {
+    opacity: 1;
+  }
+  to {
+    background-position: 0 240%;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide {
+    animation-duration: 1ms;
+    transition: none;
+  }
+  .finder__scan {
+    animation: none;
+    background: rgb(255 210 63 / 0.12);
+  }
+}
+
+/* Scan button and the X that clears a suggestion. */
+.scan-btn {
+  color: var(--accent);
+}
+
+.scan-btn.is-active {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.hint.hint--guide {
+  color: var(--accent);
+}
+
+.hint-row {
+  position: relative;
+}
+
+.hint-row__clear {
+  position: absolute;
+  right: var(--space-4);
+  top: 50%;
+  margin-top: calc(var(--tap) / -2);
+  animation: thumb-pop var(--dur-base) var(--ease-spring) both;
+}

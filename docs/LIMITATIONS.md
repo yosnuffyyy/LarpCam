@@ -4,6 +4,12 @@ LarpCam runs in the browser so that installing it is one link and two taps. That
 
 "Hidden" means the app checks at run time and leaves the control out when the browser doesn't offer the feature.
 
+## The big one: image quality
+
+A web page on an iPhone can only save **frames from the live video**. Those frames never pass through the iPhone's photo processing (Deep Fusion, Smart HDR, Night mode), and they are video-sized, not 12 or 48 megapixels. So yes: the web version of LarpCam takes visibly lower-quality photos than the built-in Camera app, most of all indoors and at night. No amount of web code can fix that.
+
+The fix is a native build (a sideloadable app) that shoots through the iPhone's own photo pipeline and keeps the same LarpCam screen and guidance. That is planned; see section 2b of the [brief](PROJECT_BRIEF.md).
+
 ## Camera
 
 | What | Status on iPhone Safari | What LarpCam does |
@@ -37,9 +43,16 @@ LarpCam runs in the browser so that installing it is one link and two taps. That
 | Private browsing | Storage may be refused. | The viewer says clearly when photos aren't being kept. |
 | Camera permission prompt | iOS may ask again on a later launch. | Nothing to do but tap Allow. LarpCam explains what happened if the camera is refused. |
 
-## Guidance (arriving in later milestones)
+## Guidance
 
-All analysis runs on the phone, with models and code that ship inside the app. That means:
+All analysis runs on the phone, with code that ships inside the app. Today the scan finds **what stands out** (contrast in brightness and color) and frames it by the rules of the aim you picked. It does not yet know *what* the thing is, so:
+
+- Labels describe only what can be measured ("bright spot", "pop of red"), not objects.
+- Aims such as Food and People apply their framing rules to whatever stands out most; they don't yet look for a plate or a face. Recognition is the next step.
+- The frame follows the subject by looking again a few times a second, and slows down on phones that struggle, so the picture stays smooth.
+- There is no lock, level or spoken coaching yet.
+
+Once recognition arrives:
 
 - Subject labels will be plainer than a cloud AI would write ("person", "dog by window" rather than poetry).
 - Detection covers common subjects (people, faces, everyday objects) plus a general "what stands out" map. It won't recognise everything.

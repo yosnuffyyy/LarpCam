@@ -52,6 +52,9 @@ When the user taps the sparkle:
 7. When the view matches the target (thresholds below), the frame locks: color/weight change, a haptic tick where the device supports it, hint becomes "Hold it" then "Shoot", and the shutter lights up. Shooting before lock is always allowed.
 8. The X dismisses the suggestion. Tapping the sparkle again rescans.
 
+### 1b-2. Aims
+The scan has selectable **aims**: the same engine with different taste. The owner picks what they're shooting and the target frame follows that aim's rules (where the subject sits, how much of the picture it fills, which shape suits it). Shipped aims: Auto, Views, Food, People, Fit check, Dump, Larp, Detail, Symmetry, Minimal. Aims live in one file ([src/guidance/aims.ts](../src/guidance/aims.ts)); adding one is adding a profile, not new code. Each aim will also suggest a vibe (see 3).
+
 ### 1c. "Your frame" mode
 The user can instead drag on the viewfinder to draw their own frame. Same guide, same tracking, same lock behavior. Frames (auto or drawn) can be moved and resized with gestures before shooting.
 
@@ -77,7 +80,17 @@ Guidance math to implement:
 - LOCK condition: IoU(target, current) >= ~0.85, center error under ~4% of frame width, roll under ~2 degrees, device steady for ~300 ms. Use hysteresis to unlock (e.g. IoU < 0.75) so it doesn't flicker.
 - Haptics and sounds only on state changes (scan found, locked), never continuously.
 
+## 2b. IMAGE QUALITY: TWO SHELLS, ONE APP
+The owner wants **zero image quality loss** and the iPhone's own processing. A web page cannot deliver that: it can only save frames from the live video, which skip Apple's photo pipeline (Deep Fusion, Smart HDR, Night mode) and top out around video resolution.
+
+Plan, pending the owner's answer on sideloading:
+- **Web app (shipping now):** zero setup, same UI and guidance, video-frame quality. Stays as the instant-try version.
+- **Native shell (sideloadable IPA):** the same web UI inside a thin native wrapper with a small Swift camera module that shoots through the iPhone's photo pipeline at full resolution and saves the result. Built unsigned by GitHub Actions on a macOS runner; the owner installs it with a sideloading tool. Guidance, aims, editor and library code are shared between both shells.
+
 ## 3. THE EDITOR ("Develop it like film")
+
+**Vibes come first.** Before the full editor, ship the simple version the owner asked for: after a shot, pick a vibe (an aesthetic) and it applies a light filter on top of the photo. It is optional, non-destructive, and each aim suggests one. Vibes are the first few Looks below with one tap instead of panels.
+
 A non-destructive editor that opens from the thumbnail or the library. Edits are stored as a JSON recipe applied to the original through a WebGL shader pipeline, with a fast preview and full-resolution export.
 
 Panels:
@@ -120,7 +133,10 @@ Panel names in the UI stay plain. No jargon where a simpler word exists.
 Priority order: installable camera shell with beautiful UI, then scan + guidance, then editor and looks, then library and polish.
 
 - **M1. Installable camera shell.** Vite/TS project, design tokens, PWA manifest + service worker + offline, Pages deploy workflow with PR previews, in-context camera permission, live preview, shapes (3:4, 4:5, 1:1, 9:16), lens chips and zoom (feature-detected), light (if available), grid, selfie camera, shutter, save original to IndexedDB, thumbnail -> viewer with share/delete, first-run screens, README install guide, LIMITATIONS.md.
-- **M2. On-device scan.** Analysis worker, saliency + bundled detectors, candidate-crop scorer, yellow frame + subject label, rescan, dismiss.
+- **M2. On-device scan and aims.** Analysis worker, "what stands out" map, candidate-crop scorer, ten aims, yellow frame + plain subject label, first plain-words hints, rescan, dismiss. *(done)*
+- **M2b. Recognition.** Bundled detectors for people, faces, food, pets and common objects, so aims can find their subject by what it is and labels can name it.
+- **N1. Native shell.** Sideloadable IPA with full-quality capture (see 2b). Scheduled once the owner confirms how they sideload.
+- **V1. Vibes.** One-tap light filters after the shot (see 3).
 - **M3. Guidance.** Dashed line + "+" marker, hint text engine, motion permission in context, live tracking, lock state with hysteresis, shutter glow, haptics where available, optional spoken coaching, level. Unit tests for all of the math.
 - **M4. Your frame.** Draw, move, resize; crop to frame.
 - **M5. Editor engine.** WebGL pipeline, Light + Color panels, recipe storage, re-edit from original.

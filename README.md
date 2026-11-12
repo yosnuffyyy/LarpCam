@@ -18,10 +18,12 @@ On Android, open the same link in Chrome and tap **Install**.
 - Live camera with four picture shapes (3:4, 4:5, 1:1, 9:16)
 - Zoom chips and pinch to zoom; only lenses your phone really has are shown
 - Selfie camera, grid lines, and the phone's light where the browser allows it
+- **Find the shot**: tap the sparkle and a yellow frame shows where to aim, with a plain hint ("Move your phone up")
+- **Ten aims** (Auto, Views, Food, People, Fit check, Dump, Larp, Detail, Symmetry, Minimal), each framing differently
 - Photos saved on your phone, with a viewer to save, share or delete them
 - Works offline once installed
 
-Coming next: the scan button that finds the shot and coaches you into position, then the film-style editor. The plan is in [docs/PROJECT_BRIEF.md](docs/PROJECT_BRIEF.md). What a web app can't do on an iPhone is listed honestly in [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
+Coming next: recognising people, food and pets, a lock when you're lined up, one-tap vibes, and a full-quality native build. The plan is in [docs/PROJECT_BRIEF.md](docs/PROJECT_BRIEF.md). What a web app can't do on an iPhone is listed honestly in [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
 
 ## Privacy
 

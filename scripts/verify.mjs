@@ -112,6 +112,85 @@ async function yFraction(page, selector) {
   }, selector);
 }
 
+/** Picture shape lives in the More sheet. */
+async function setShape(page, label) {
+  await page.getByRole('button', { name: 'More options' }).click();
+  await page.waitForSelector('.sheet.is-open');
+  await page.getByRole('radio', { name: `${label} shape` }).click();
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.sheet', { state: 'detached' });
+}
+
+async function flipCamera(page) {
+  await page.getByRole('button', { name: 'More options' }).click();
+  await page.waitForSelector('.sheet.is-open');
+  await page.getByRole('switch', { name: /Selfie camera/ }).click();
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.sheet', { state: 'detached' });
+  await page.waitForSelector('.finder.is-live');
+}
+
+async function pickAim(page, name) {
+  await page.locator('.chip').click();
+  await page.waitForSelector('.sheet.is-open');
+  await page.getByRole('radio', { name: new RegExp(`^${name}`) }).click();
+  await page.waitForSelector('.sheet', { state: 'detached' });
+}
+
+const guideBox = (page) =>
+  page.evaluate(() => {
+    const g = document.querySelector('.guide');
+    const f = document.querySelector('.finder').getBoundingClientRect();
+    if (!g) return null;
+    const r = g.getBoundingClientRect();
+    return { x: (r.left - f.left) / f.width, y: (r.top - f.top) / f.height, w: r.width / f.width, h: r.height / f.height, ratio: r.width / r.height, finderRatio: f.width / f.height };
+  });
+
+async function scanChecks(page, tag) {
+  await page.getByRole('button', { name: 'Find the shot' }).click();
+  check(`${tag}: scanning state shows`, await page.locator('.finder__scan').count() === 1 && (await page.locator('.hint').textContent()).includes('Looking'));
+  await page.waitForSelector('.guide', { timeout: 5000 });
+  await settle(page, 900);
+  const box = await guideBox(page);
+  check(`${tag}: target frame is inside the picture and has its shape`, box && box.x >= -0.01 && box.y >= -0.01 && box.x + box.w <= 1.01 && box.y + box.h <= 1.01 && Math.abs(box.ratio - box.finderRatio) < 0.02, JSON.stringify(box));
+  const label = await page.locator('.guide__label').textContent();
+  check(`${tag}: subject label is 2 to 4 plain words`, /^[a-z]+( [a-z]+){1,3}$/.test(label), label);
+  const hint = await page.locator('.hint').textContent();
+  check(`${tag}: hint is a plain sentence`, /^(Move your phone (up|down|left|right)|Step closer|A little closer|Zoom in to 2×|Hold it|Nice, shoot)$/.test(hint), hint);
+  await shot(page, `${tag}-scan-auto`);
+  const small = await smallTargets(page);
+  check(`${tag}: all tap targets are at least 44 px while scanning`, small.length === 0, small.join(', '));
+
+  // Aims must really change the answer.
+  await page.locator('.chip').click();
+  await page.waitForSelector('.sheet.is-open');
+  await settle(page);
+  await shot(page, `${tag}-aim-sheet`);
+  const aimSmall = await smallTargets(page);
+  check(`${tag}: all aim tap targets are at least 44 px`, aimSmall.length === 0, aimSmall.join(', '));
+  check(`${tag}: ten aims are offered`, (await page.locator('.aim').count()) === 10);
+  await page.getByRole('radio', { name: /^Detail/ }).click();
+  await page.waitForSelector('.sheet', { state: 'detached' });
+  await settle(page, 1800);
+  const tight = await guideBox(page);
+  await shot(page, `${tag}-scan-detail`);
+  await pickAim(page, 'Minimal');
+  await settle(page, 1800);
+  const loose = await guideBox(page);
+  check(`${tag}: Detail frames tighter than Minimal`, tight && loose && tight.w < loose.w - 0.1, `${tight?.w.toFixed(2)} vs ${loose?.w.toFixed(2)}`);
+  await pickAim(page, 'Fit check');
+  await settle(page, 600);
+  const tall = await page.evaluate(() => { const f = document.querySelector('.finder').getBoundingClientRect(); return f.width / f.height; });
+  check(`${tag}: Fit check switches to the tall shape`, Math.abs(tall - 9 / 16) < 0.01, tall.toFixed(3));
+
+  await page.getByRole('button', { name: 'Clear the frame' }).click();
+  await settle(page, 300);
+  check(`${tag}: clearing removes the frame and the hint`, (await page.locator('.guide').count()) === 0 && (await page.locator('.hint').textContent()) === '');
+  await pickAim(page, 'Auto');
+  await setShape(page, '3:4');
+  await settle(page, 700);
+}
+
 async function walkFirstRun(page, tag) {
   await page.goto(url);
   await page.waitForSelector('.welcome.is-open');
@@ -160,7 +239,7 @@ async function cameraChecks(page, tag, { width, height }) {
     return {
       left: Math.abs(mid('.chip') - mid('.thumb-slot')),
       center: Math.abs(mid('.lenses') - mid('.shutter')),
-      right: Math.abs(mid('[aria-label="More options"]') - mid('[aria-label="Switch to selfie camera"]')),
+      right: Math.abs(mid('[aria-label="More options"]') - mid('[aria-label="Find the shot"]')),
       shutter: Math.abs(mid('.shutter') - window.innerWidth / 2),
     };
   });
@@ -171,7 +250,7 @@ async function cameraChecks(page, tag, { width, height }) {
 
   // Shapes: the viewfinder must take each shape exactly and stay on screen.
   for (const [label, ratio] of [['4:5', 4 / 5], ['1:1', 1], ['9:16', 9 / 16], ['3:4', 3 / 4]]) {
-    await page.locator('.chip').click();
+    await setShape(page, label);
     await settle(page, 800);
     const r = await page.evaluate(() => {
       const b = document.querySelector('.finder').getBoundingClientRect();
@@ -207,13 +286,9 @@ async function cameraChecks(page, tag, { width, height }) {
   await shot(page, `${tag}-8-camera-2x`);
 
   // Selfie camera and back.
-  await page.getByRole('button', { name: 'Switch to selfie camera' }).click();
-  await page.getByRole('button', { name: 'Switch to back camera' }).waitFor();
-  await page.waitForSelector('.finder.is-live');
+  await flipCamera(page);
   check(`${tag}: selfie view is mirrored`, await page.evaluate(() => getComputedStyle(document.querySelector('video')).transform.startsWith('matrix(-1')));
-  await page.getByRole('button', { name: 'Switch to back camera' }).click();
-  await page.getByRole('button', { name: 'Switch to selfie camera' }).waitFor();
-  await page.waitForSelector('.finder.is-live');
+  await flipCamera(page);
   await page.getByRole('radio', { name: 'Closer view' }).click();
   await settle(page, 400);
 
@@ -308,6 +383,7 @@ for (const size of [{ width: 375, height: 812 }, { width: 390, height: 844 }]) {
   const { context, page, errors } = await newPhone(size);
   await walkFirstRun(page, tag);
   await cameraChecks(page, tag, size);
+  await scanChecks(page, tag);
   await viewerChecks(page, tag);
 
   // Second launch: straight to the camera, photo still there.
@@ -350,9 +426,7 @@ for (const size of [{ width: 375, height: 812 }, { width: 390, height: 844 }]) {
   });
   check(`${tag}: picture clears the status bar`, geometry.finderTop >= 47 || geometry.finderTop === 0, `top ${geometry.finderTop}`);
   check(`${tag}: 3:4 picture is not covered by the controls`, geometry.finderBottom <= geometry.controlsTop + 0.5, `${geometry.finderBottom} vs ${geometry.controlsTop}`);
-  await page.locator('.chip').click();
-  await page.locator('.chip').click();
-  await page.locator('.chip').click();
+  await setShape(page, '9:16');
   await settle(page, 800);
   await shot(page, `${tag}-3-camera-9x16`);
   check(`${tag}: no errors in the console`, errors.length === 0, errors.join(' | '));
@@ -467,7 +541,7 @@ for (const size of [{ width: 375, height: 812 }, { width: 390, height: 844 }]) {
           else resolve(gaps);
         };
         requestAnimationFrame(step);
-        setTimeout(() => document.querySelector('.chip').click(), 300);
+        setTimeout(() => document.querySelector('.scan-btn').click(), 300);
         setTimeout(() => document.querySelector('.shutter').click(), 1300);
         setTimeout(() => document.querySelector('[aria-label="More options"]').click(), 2100);
       }),

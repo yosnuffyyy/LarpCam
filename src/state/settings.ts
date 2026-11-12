@@ -5,6 +5,8 @@ import { storageNamespace } from '../lib/platform';
 /** Everything the app remembers between launches. Deliberately tiny. */
 export interface Settings {
   shape: Shape;
+  /** Which aim the scan uses (see guidance/aims.ts). */
+  aim: string;
   grid: boolean;
   /** First-run screens have been seen. */
   welcomed: boolean;
@@ -14,6 +16,7 @@ export interface Settings {
 
 const DEFAULTS: Settings = {
   shape: '3:4',
+  aim: 'auto',
   grid: false,
   welcomed: false,
   skippedInstall: false,

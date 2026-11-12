@@ -2,13 +2,17 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'preac
 import { camera, type CameraStatus } from '../camera/CameraService';
 import { grabFrame } from '../camera/capture';
 import { formatZoom } from '../camera/lenses';
-import { SHAPES, SHAPE_RATIO, layoutFinder, nextShape, type FinderLayout } from '../lib/geometry';
+import { aimById, type Aim } from '../guidance/aims';
+import { guidance } from '../guidance/GuidanceEngine';
+import { hintFor } from '../guidance/hints';
+import { SHAPES, SHAPE_RATIO, layoutFinder, type FinderLayout } from '../lib/geometry';
 import { isStandalone, prefersReducedMotion, tick } from '../lib/platform';
 import { library, newPhotoId } from '../library/LibraryStore';
 import { settings, updateSettings } from '../state/settings';
+import { AimSheet } from './AimSheet';
 import { InstallSteps, canShowInstallSteps } from './InstallSteps';
 import { Sheet, SwitchRow } from './Sheet';
-import { IconFlip, IconGrid, IconLight, IconMore, IconPrivate, IconShape } from './icons';
+import { IconAim, IconClose, IconFlip, IconGrid, IconLight, IconMore, IconPrivate, IconShape, IconSparkle } from './icons';
 import { showToast } from './toast';
 import './camera.css';
 
@@ -28,10 +32,12 @@ export function CameraScreen({ active, onOpenViewer }: CameraScreenProps) {
   const thumb = useRef<HTMLDivElement>(null);
 
   const [moreOpen, setMoreOpen] = useState(false);
+  const [aimOpen, setAimOpen] = useState(false);
   const [notice, setNotice] = useState('');
   const noticeTimer = useRef(0);
 
   const { shape, grid } = settings.value;
+  const aim = aimById(settings.value.aim);
   const ratio = SHAPE_RATIO[shape];
   const status = camera.status.value;
   const live = status === 'live';
@@ -72,6 +78,45 @@ export function CameraScreen({ active, onOpenViewer }: CameraScreenProps) {
 
   usePinchZoom(finder, live, say);
 
+  // ---- Scan -----------------------------------------------------------------
+  const scanStatus = guidance.status.value;
+  const target = guidance.target.value;
+  const scanning = scanStatus !== 'off';
+
+  // The scan only makes sense over a live picture on this screen.
+  useEffect(() => {
+    if ((!live || !active) && guidance.active) guidance.stop();
+  }, [live, active]);
+  useEffect(() => () => guidance.stop(), []);
+
+  const scan = () => {
+    const el = video.current;
+    if (!el || !live) return;
+    tick(8);
+    guidance.start(el, () => ({
+      ratio: SHAPE_RATIO[settings.value.shape],
+      digitalZoom: camera.digitalZoom.value,
+      mirrored: camera.facing.value === 'user',
+      aim: settings.value.aim,
+    }));
+  };
+
+  const pickAim = (next: Aim) => {
+    updateSettings({ aim: next.id, shape: next.shape ?? settings.value.shape });
+    setAimOpen(false);
+    say(next.name);
+  };
+
+  let coaching = '';
+  if (scanStatus === 'scanning') coaching = 'Looking…';
+  else if (scanStatus === 'empty') coaching = 'Point at something that stands out';
+  else if (scanStatus === 'found' && target) {
+    coaching = hintFor(target, {
+      zoom: camera.zoom.value,
+      canZoomTo2x: lensId === 'wide' && lenses.some((l) => l.id === 'wide-2x'),
+    });
+  }
+
   const shoot = async () => {
     const el = video.current;
     if (!el || camera.status.value !== 'live') return;
@@ -106,12 +151,6 @@ export function CameraScreen({ active, onOpenViewer }: CameraScreenProps) {
     }
   };
 
-  const cycleShape = () => {
-    const next = nextShape(shape);
-    updateSettings({ shape: next });
-    say(next);
-  };
-
   const finderStyle = layout
     ? {
         width: `${layout.width}px`,
@@ -142,18 +181,39 @@ export function CameraScreen({ active, onOpenViewer }: CameraScreenProps) {
           <span />
         </div>
         <div class="finder__blink" ref={blink} aria-hidden="true" />
+        {scanStatus === 'scanning' && <div class="finder__scan" aria-hidden="true" />}
+        {target && (
+          <div
+            class={`guide ${target.y + target.size > 0.86 ? 'guide--low' : ''}`}
+            style={{
+              left: `${target.x * 100}%`,
+              top: `${target.y * 100}%`,
+              width: `${target.size * 100}%`,
+              height: `${target.size * 100}%`,
+            }}
+          >
+            <span class="guide__label">{guidance.label.value}</span>
+          </div>
+        )}
         {!live && active && <StatusPanel status={status} />}
       </div>
 
       <div class={`controls ${layout?.underControls ? 'is-over-picture' : ''}`} ref={controls}>
-        <p class="hint" aria-live="polite">
-          {notice}
-        </p>
+        <div class="hint-row">
+          <p class={`hint ${!notice && coaching ? 'hint--guide' : ''}`} aria-live="polite">
+            {notice || coaching}
+          </p>
+          {scanning && (
+            <button class="icon-btn hint-row__clear" onClick={() => guidance.stop()} aria-label="Clear the frame">
+              <IconClose size={20} />
+            </button>
+          )}
+        </div>
 
         <div class="controls__row controls__row--quiet">
-          <button class="chip" onClick={cycleShape} aria-label={`${shape} picture shape, tap to change`}>
-            <IconShape ratio={ratio} />
-            <span>{shape}</span>
+          <button class="chip" onClick={() => setAimOpen(true)} aria-label={`${aim.name}, change aim`} aria-haspopup="dialog">
+            <IconAim size={18} />
+            <span>{aim.name}</span>
           </button>
 
           <div class="lenses" role="radiogroup" aria-label="Zoom" hidden={lenses.length === 0}>
@@ -201,20 +261,18 @@ export function CameraScreen({ active, onOpenViewer }: CameraScreenProps) {
             <span class="shutter__disc" />
           </button>
 
-          {camera.canFlip.value ? (
-            <button
-              class="icon-btn icon-btn--lg"
-              onClick={() => void camera.flip()}
-              disabled={status === 'starting'}
-              aria-label={mirrored ? 'Switch to back camera' : 'Switch to selfie camera'}
-            >
-              <IconFlip />
-            </button>
-          ) : (
-            <span class="icon-btn--placeholder" aria-hidden="true" />
-          )}
+          <button
+            class={`icon-btn icon-btn--lg scan-btn ${scanning ? 'is-active' : ''}`}
+            onClick={scan}
+            disabled={!live}
+            aria-label={scanning ? 'Look again' : 'Find the shot'}
+          >
+            <IconSparkle />
+          </button>
         </div>
       </div>
+
+      <AimSheet open={aimOpen} current={aim.id} onPick={pickAim} onClose={() => setAimOpen(false)} />
 
       <Sheet open={moreOpen} title="More options" onClose={() => setMoreOpen(false)}>
         <h2 class="serif sheet__title">More</h2>
@@ -248,6 +306,15 @@ export function CameraScreen({ active, onOpenViewer }: CameraScreenProps) {
             checked={grid}
             onChange={(on) => updateSettings({ grid: on })}
           />
+          {camera.canFlip.value && (
+            <SwitchRow
+              label="Selfie camera"
+              hint="Use the camera on the front"
+              icon={<IconFlip />}
+              checked={mirrored}
+              onChange={() => void camera.flip()}
+            />
+          )}
           {camera.torchAvailable.value && (
             <SwitchRow
               label="Light"

@@ -129,3 +129,20 @@ export function IconShape({ ratio, size = 18 }: { ratio: number; size?: number }
     </svg>
   );
 }
+
+/** A four-point sparkle: "find the shot". */
+export const IconSparkle = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M11 3.5c.6 4.2 2.3 5.9 6.5 6.5-4.2.6-5.9 2.3-6.5 6.5-.6-4.2-2.3-5.9-6.5-6.5 4.2-.6 5.9-2.3 6.5-6.500z" />
+    <path d="M18.5 15.500v5M16 18h5" />
+  </Svg>
+);
+
+/** A small target: the aim picker. */
+export const IconAim = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="7.5" />
+    <circle cx="12" cy="12" r="2" />
+    <path d="M12 2.500v3M12 18.500v3M2.5 12h3M18.5 12h3" />
+  </Svg>
+);

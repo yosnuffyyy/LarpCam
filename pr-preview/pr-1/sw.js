@@ -8,8 +8,8 @@
  *  - A pull-request preview lives in a subfolder of the same site, so cache
  *    names carry the scope and this worker ignores URLs it did not build.
  */
-const VERSION = "4a11d1d9b560";
-const PRECACHE = ["assets/index-CYVmhwJy.css","assets/index-DaehuCSt.js","assets/instrument-serif-latin-400-normal-DnYpCC2O.woff2","icons/apple-touch-icon.png","icons/icon-192.png","icons/icon-512.png","icons/icon-maskable-512.png","icons/icon.svg","index.html","manifest.webmanifest"];
+const VERSION = "8d437654963a";
+const PRECACHE = ["assets/analysis.worker-3S1F05Zt.js","assets/index-Bog5KTbA.css","assets/index-DxCyEjyh.js","assets/instrument-serif-latin-400-normal-DnYpCC2O.woff2","icons/apple-touch-icon.png","icons/icon-192.png","icons/icon-512.png","icons/icon-maskable-512.png","icons/icon.svg","index.html","manifest.webmanifest"];
 
 const scope = new URL(self.registration.scope);
 const PREFIX = `larpcam:${scope.pathname}:`;

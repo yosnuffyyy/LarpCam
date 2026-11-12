@@ -1,0 +1,17 @@
+/* Shown only when a phone is held sideways: LarpCam is an upright camera for now. */
+.upright {
+  position: absolute;
+  inset: 0;
+  z-index: calc(var(--layer-toast) + 1);
+  display: none;
+  place-items: center;
+  background: var(--black);
+  color: var(--white);
+  font-size: var(--text-xl);
+}
+
+@media (orientation: landscape) and (max-height: 480px) and (pointer: coarse) {
+  .upright {
+    display: grid;
+  }
+}

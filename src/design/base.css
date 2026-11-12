@@ -1,0 +1,178 @@
+/* Reset and app-wide rules. Values come from tokens.css. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--black);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+  /* dvh tracks Safari's collapsing bars; the fixed inset is the fallback. */
+  height: 100dvh;
+  display: flex;
+  justify-content: center;
+  background: var(--black);
+}
+
+/* The phone-shaped column everything lives in. Full width on a phone. */
+.column {
+  position: relative;
+  width: 100%;
+  max-width: var(--column);
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+img,
+video,
+svg {
+  display: block;
+}
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.serif {
+  font-family: var(--font-serif);
+  font-weight: var(--weight-regular);
+  letter-spacing: -0.01em;
+  line-height: var(--leading-tight);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Shared control shapes ---------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 52px;
+  padding: 0 var(--space-6);
+  border-radius: var(--radius-full);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.005em;
+  transition:
+    transform var(--dur-fast) var(--ease-spring-snappy),
+    opacity var(--dur-fast) var(--ease-out);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn--primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.btn--quiet {
+  color: var(--fg-dim);
+  font-weight: var(--weight-medium);
+}
+
+.btn--fill {
+  background: var(--fill);
+  color: var(--fg);
+}
+
+.btn--danger {
+  background: var(--danger);
+  color: var(--bg);
+}
+
+.btn--wide {
+  width: 100%;
+}
+
+/* Round icon button: 44 px tap target with a quiet fill. */
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  border-radius: var(--radius-full);
+  background: var(--fill);
+  color: var(--fg);
+  transition:
+    transform var(--dur-fast) var(--ease-spring-snappy),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.icon-btn:active {
+  transform: scale(0.92);
+  background: var(--fill-strong);
+}
+
+.icon-btn--bare {
+  background: none;
+}

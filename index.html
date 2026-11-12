@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>LarpCam</title>
+    <meta name="description" content="A quiet camera that installs from a link. Everything stays on your phone." />
+    <meta name="theme-color" content="#000000" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="LarpCam" />
+    <meta name="format-detection" content="telephone=no" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <style>
+      /* Paint black before any CSS or script arrives, so launch never flashes. */
+      html, body { margin: 0; background: #000; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <noscript>LarpCam needs JavaScript to open the camera.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

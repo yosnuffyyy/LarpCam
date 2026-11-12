@@ -16,7 +16,7 @@ LarpCam runs in the browser so that installing it is one link and two taps. That
 | Ultra-wide (0.5×) and telephoto lenses | Depends on the iOS version, and the browser only tells us lens names in the phone's language. | The 0.5× and Tele chips appear only when a matching camera is found. On phones set to a language other than English they may not appear. The web can't tell 2×, 3× and 5× telephotos apart, so the chip says "Tele". |
 | 2× | Always possible. | Uses the camera's own zoom when the browser exposes it (sharper), otherwise crops the 1× picture. |
 | Flash for the photo | Not available. | No flash button. Where the browser allows it, a **Light** switch keeps the phone's light on while you shoot. Hidden otherwise. |
-| Photos while holding the phone sideways | The page can't be locked upright, and with rotation lock on the picture is saved upright. | For now LarpCam asks you to hold the phone upright. |
+| Photos while holding the phone sideways | A web page can't lock itself upright or learn which way the phone is held without the motion permission. | For now LarpCam is an upright camera: if the page turns sideways it asks you to turn the phone back. With rotation lock on, a sideways shot is saved turned on its side. Proper sideways photos are planned along with guidance. |
 | Shutter with the volume buttons | Not available to web pages. | Not offered. |
 
 ## Feel

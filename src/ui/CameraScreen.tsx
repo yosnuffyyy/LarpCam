@@ -151,7 +151,7 @@ export function CameraScreen({ active, onOpenViewer }: CameraScreenProps) {
         </p>
 
         <div class="controls__row controls__row--quiet">
-          <button class="chip" onClick={cycleShape} aria-label={`Picture shape ${shape.replace(':', ' by ')}. Tap to change.`}>
+          <button class="chip" onClick={cycleShape} aria-label={`${shape} picture shape, tap to change`}>
             <IconShape ratio={ratio} />
             <span>{shape}</span>
           </button>
@@ -159,20 +159,22 @@ export function CameraScreen({ active, onOpenViewer }: CameraScreenProps) {
           <div class="lenses" role="radiogroup" aria-label="Zoom" hidden={lenses.length === 0}>
             {lenses.map((lens) => {
               const selected = lens.id === lensId;
+              // The chosen chip shows the live zoom, so pinching reads out as you go.
+              const text = selected && lens.kind !== 'tele' ? formatZoom(camera.zoom.value * lensBase(lens.id)) : lens.label;
               return (
                 <button
                   key={lens.id}
                   class="lens"
                   role="radio"
                   aria-checked={selected}
-                  aria-label={lens.name}
+                  aria-label={`${text} ${lens.name}`}
                   disabled={!live}
                   onClick={() => {
                     tick(6);
                     void camera.selectLens(lens.id);
                   }}
                 >
-                  <span>{selected && lens.kind !== 'tele' ? formatZoom(camera.zoom.value * lensBase(lens.id)) : lens.label}</span>
+                  <span>{text}</span>
                 </button>
               );
             })}
@@ -228,7 +230,7 @@ export function CameraScreen({ active, onOpenViewer }: CameraScreenProps) {
                 class="segment"
                 role="radio"
                 aria-checked={s === shape}
-                aria-label={s.replace(':', ' by ')}
+                aria-label={`${s} shape`}
                 onClick={() => updateSettings({ shape: s })}
               >
                 <IconShape ratio={SHAPE_RATIO[s]} size={22} />
